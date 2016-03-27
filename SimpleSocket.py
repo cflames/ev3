@@ -1,11 +1,8 @@
 import socket
-import sys
-import errno
-import math
-import numpy as np
+import pygame, sys
 import time
     
-class MySocket:
+class SimpleSocket:
     """demonstration class only
       - coded for clarity, not efficiency
     """
@@ -20,14 +17,14 @@ class MySocket:
     def connect(self, host, port):
         self.sock.connect((host, port))
 
-    def mysend(self, msg):
+    def sendMessage(self, msg):
 
         sent = self.sock.sendall(msg[:].encode())
         if sent == 0:
             raise RuntimeError("socket connection broken")
 
 
-    def myreceive(self):
+    def receiveMessage(self):
             try:
                 msg = self.sock.recv(256)
             except socket.error as e:
@@ -41,3 +38,4 @@ class MySocket:
             else:
                 msg = msg.decode("utf-8")
                 return msg
+
