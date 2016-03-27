@@ -3,19 +3,21 @@ import pygame, sys
 import time
     
 class SimpleSocket:
-    """demonstration class only
-      - coded for clarity, not efficiency
+    """ 
+      - Very simple Socket connection class
     """
 
     def __init__(self, sock=None):
         if sock is None:
-            self.sock = socket.socket(
-                            socket.AF_INET, socket.SOCK_STREAM)
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         else:
             self.sock = sock
 
     def connect(self, host, port):
         self.sock.connect((host, port))
+    
+    def close(self):
+        self.sock.close()
 
     def sendMessage(self, msg):
 
