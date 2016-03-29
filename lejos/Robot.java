@@ -1,48 +1,5 @@
 package test;
 
-/*
- * Michael duPont - flyinactor91.com
- * EV3-Remote - https://github.com/flyinactor91/EV3-Remote
- * Generic robot client
- * Lejos 0.8.0-alpha running on EV3
- * 
- * 2014-04-08
- * 
- * Commands recieved from Controller
- *     jrun Robot (-c)
- * Commands recieved from terminal
- *     jrun Robot -t
- * 
- * Commands separated by ';'
- * Available Commands:
- * 		Motors
- * 			Forward: 	F distance<int> (serial<def=Y /N>)
- * 			Backward: 	B distance<int> (serial<def=Y /N>)
- * 			Left:		L degree<int> (serial< def=Y /N>)
- * 			Right:		R degree<int> (serial< def=Y /N>)
- * 			Servo:		S motor<1/2> degree<int +/-> (serial< def=Y /N>)
- * 			MotorSpd:	MS motor<M/S1/S2> speed<int>				#Main (A and B) / Servos (C and D)
- *		Sound
- * 			Volume:		VOL percent<int 0-100>					#Buzzer/TONE doesn't work if volume less than 8%
- * 			Tone:		TONE freq-Hz<int> duration-ms<int>
- * 			Beep:		BEEP pattern<int 1-5>
- * 			Song:		WAV song<*.wav>							#Song.wav location
- *		Utils
- * 			Pause:		P duration-ms<int>
- * 			LED Disp:	LED pattern<int 0-9>
- * 			Battery:	BAT										#Displays the battery level (terminal/LCD)
- * 			Quit:		QUIT
- * 
- * Example: F 1000 N;LED 8;S 1 300;P 2000;L 220;B 300;S 1 -300;BEEP 5;QUIT
- * 
- * Notes:
- * 		LED patterns:
- * 			0 = Off , 1 = Green , 2 = Red , 3 = Orange
- * 			4-6 = Even pulses , 7-9 Heartbeat pulses
- * 		Beep patterns:
- * 			1 = beep , 2 = two beeps , 3 = buzzer
- * 			4 = ascending beeps , 5 = descending beeps
- */
 
 import java.io.*;
 import java.net.Socket;
