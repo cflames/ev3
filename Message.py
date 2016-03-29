@@ -1,3 +1,4 @@
+import copy
 
 class RobotMessage():
     """
@@ -18,8 +19,13 @@ class RobotMessage():
         msg += str(self.frontSensor) + "\n"
         msg += str(self.timeStamp) + "\n"
         return msg
+        
+    def copy(self):
+        return copy.deepcopy(self)
     
     def __eq__(self, other):
+        if other is None:
+            return False
         return self.leftMotorTacho == other.leftMotorTacho \
                and self.rightMotorTacho == other.rightMotorTacho \
                and self.leftSensor == other.leftSensor \

@@ -34,6 +34,7 @@ class RobotConnectionTestCase(unittest.TestCase):
         
     def testReadMessage(self):
         testTxt = "100, 100, 30 30 40 41 42, 75 15, 1231231 end"
+        testSecondTxt = "111, 111, 31 32 33 34 35, 55 25, 22 end"
         testMessage = RobotMessage()
         testMessage.leftMotorTacho = 100
         testMessage.rightMotorTacho = 100
@@ -41,10 +42,20 @@ class RobotConnectionTestCase(unittest.TestCase):
         testMessage.frontSensor = [75,15]
         testMessage.timeStamp = 0
         self.socketMock.return_value.receiveMessage = MagicMock()
-        self.socketMock.return_value.receiveMessage.side_effect = [testTxt, ""]
+        self.socketMock.return_value.receiveMessage.side_effect = [testTxt, testSecondTxt, "", ""]
         message = self.testConn.readMessage()
 
         assert testMessage == message
-    
+        
+        testMessage = RobotMessage()
+        testMessage.leftMotorTacho = 111
+        testMessage.rightMotorTacho = 111
+        testMessage.leftSensor = [31,32,33,34,35]
+        testMessage.frontSensor = [55,25]
+        testMessage.timeStamp = 0
+        message = self.testConn.readMessage()
+        
+        assert testMessage == message
+         
 if __name__ == '__main__':
     unittest.main()

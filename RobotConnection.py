@@ -6,7 +6,6 @@ class RobotConnection():
     Inherit from SimpleSocket, implement connection to Ev3, receive message and decode it in json format
     """
     def __init__(self):
-        super().__init__()
         self.remoteIp = ""
         self.remotePort = 5000
         self.socket = SimpleSocket()
