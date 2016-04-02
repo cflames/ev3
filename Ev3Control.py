@@ -22,19 +22,25 @@ while True:
         # check if key is pressed
         # if you use event.key here it will give you error at runtime
         if event.type == pygame.KEYUP:
-            conn.mysend("stop\n")
-            continue
+            if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT   \
+                   or event.key == pygame.K_UP:
+                conn.sendMessage("stop\n")
+                continue
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:             
-                conn.mysend("turnleft\n")
+                conn.sendMessage("turnleft\n")
             if event.key == pygame.K_RIGHT:                
-                conn.mysend("turnright\n")
+                conn.sendMessage("turnright\n")
+            if event.key == pygame.K_l:             
+                conn.sendMessage("left 300\n")
+            if event.key == pygame.K_r:                
+                conn.sendMessage("right 300\n")                
             if event.key == pygame.K_UP:
-                conn.mysend("up\n")
+                conn.sendMessage("up\n")
             if event.key == pygame.K_a:
-                conn.mysend("measure\n")      
+                conn.sendMessage("measure\n")      
             if event.key == pygame.K_q:
-                conn.mysend("quit\n")            
+                conn.sendMessage("quit\n")            
             # checking if left modifier is pressed
             
     clock.tick(20)

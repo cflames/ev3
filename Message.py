@@ -5,6 +5,7 @@ class RobotMessage():
     This class is for the message from RobotConnection to other modules
     """
     def __init__(self):
+        self.type = ""
         self.leftMotorTacho = 0
         self.rightMotorTacho = 0
         self.leftSensor = []
@@ -32,3 +33,4 @@ class RobotMessage():
                and self.frontSensor == other.frontSensor \
                and self.timeStamp == other.timeStamp
         
+    

@@ -28,7 +28,7 @@ class SimpleSocket:
 
     def receiveMessage(self):
             try:
-                msg = self.sock.recv(256)
+                msg = self.sock.recv(1024)
             except socket.error as e:
                 err = e.args[0]
                 if err == errno.EAGAIN or err == errno.EWOULDBLOCK:

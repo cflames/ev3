@@ -15,10 +15,17 @@ class RobotConnection():
         self.rawDataFileName = ""
         self.__rawFile = None
           
-    def connectToEv3(self):
+        self.FrontSensorMax = 200
+        self.LeftSensorMax = 70
+        self.SensorInValid = ["Infinity", "", " "]
+        
+    def connectToEv3(self, simulate=False):
         # Do not consider exception because it's very simple network environment
-        self.socket.connect(self.remoteIp, self.remotePort)
-        self.__rawFile = self.__openDataFile("w")
+        if not simulate:
+            self.socket.connect(self.remoteIp, self.remotePort)
+            self.__openDataFile("w")
+        else:
+            self.__openDataFile("r")
         
     def __openDataFile(self, attribute):
         """
@@ -26,19 +33,19 @@ class RobotConnection():
         """
         if self.rawDataFileName != "":
             self.__rawFile = open(self.rawDataFileName, attribute)
-        
+
     def __writeDataFile(self, message):
         """
         Write message into data file
         """
-        if self.__rawFile is not None:
-            self.__rawFile.write(message)
+        if not self.__rawFile is None:
+            self.__rawFile.write(message + "\n")
+            self.__rawFile.flush()
 
-    def readDataFileToBuffer(self):
+    def __readDataFileToBuffer(self):
         """
         read raw data from file and save to buffer
         """
-        self.__openDataFile("r")
         self.__buffer = self.__rawFile.read()
         self.__rawFile.close()        
             
@@ -46,12 +53,13 @@ class RobotConnection():
         """
         Read all contents from socket and put it into self.buffer
         """
-        while True:
+        if True:
             message = self.socket.receiveMessage()
             # read all untile there is ""
             if message == "":
-                break
-            self.__writeDataFile(message)
+                return
+           
+            self.__writeDataFile(str(message))
             self.__buffer += message
             
     def __readFromBuffer(self, tail="end"):
@@ -79,19 +87,43 @@ class RobotConnection():
         counters = rawMessage.strip("\n").split(",")
         
         message = RobotMessage()
-        message.leftMotorTacho = int(counters[0])
-        message.rightMotorTacho = int(counters[1])      
-        message.leftSensor = [float(item) for item in counters[2].strip(" ").split(" ")]       
-        # now there is only one sample (distance, middle motor tacho count)
-        message.frontSensor = [float(item) for item in counters[3].strip(" ").split(" ")] 
         
+        if counters[0].strip(" ") == "Left":
+            message.type = "Left"
+            message.leftMotorTacho = int(counters[1])
+            message.rightMotorTacho = int(counters[2])         
+            message.leftSensor = [float(item) for item in counters[3].strip(" ").split(" ") \
+                                     if item  not in self.SensorInValid and item != "" and float(item) < self.LeftSensorMax]       
+            # now there is only one sample (distance, middle motor tacho count)
+            message.frontSensor = [float(item) for item in counters[4].strip(" ").split(" ") \
+                                     if item  not in self.SensorInValid and item != "" and float(item) < self.FrontSensorMax] 
+        
+        elif counters[0].strip(" ") == "Corner":
+            message.type = "Corner"
+            message.leftMotorTacho = int(counters[1])
+            message.rightMotorTacho = int(counters[2])     
+            message.leftSensor = []
+            samples = counters[3].strip(" ").split(" ")
+            for index in range(len(samples)):
+                if index%2 == 0:
+                    message.frontSensor.append((float(samples[index]), int(samples[index + 1]))) 
+ 
         return message
+    
+    def __filterInvalidSample(self):
+        """
         
-    def readMessage(self):
+        """
+    
+    def readMessage(self, simulate=False):
         """
         External interface, other modules call this to read message 
         """
-        self.__readFromSocket()
+        if simulate == True:
+            if not self.__rawFile.closed:
+                self.__readDataFileToBuffer()
+        else:
+            self.__readFromSocket()
         rawMessage = self.__readFromBuffer()
         return self.__encodeMessage(rawMessage)
         

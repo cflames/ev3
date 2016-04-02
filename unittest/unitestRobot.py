@@ -8,8 +8,10 @@ from Message import RobotMessage
 from Pose import Pose
 
 helpList = []
-def helpMapCallBack(x, y):
+helpTheta = []
+def helpMapCallBack(x, y, theta):
     helpList.append((x, y))
+    helpTheta.append(theta)
     
 class RobotTestCase(unittest.TestCase):
     """
@@ -24,7 +26,7 @@ class RobotTestCase(unittest.TestCase):
     """
 
     def testMotion(self):
-        global helpList
+        global helpList, helpTheta
         sample = RobotMessage()
         sample.leftMotorTacho = 0
         sample.rightMotorTacho = 0
@@ -59,11 +61,13 @@ class RobotTestCase(unittest.TestCase):
 
         robot.updateMap(sample, helpMapCallBack)
         testList = [(0, round(14/3)), (0, round(14/3*2)), (0, round(14/3*3)), (20, 50)]
-        assert testList == helpList       
+        assert testList == helpList        
+        assert helpTheta[0] == 90*math.pi/180
         
         # turn right 45 degree 
         # deltatacho = 45/180*math.pi*robot.TurnRadius)/(robot.wheelDiameter*math.pi)*360
         helpList = []
+        helpTheta = []
         sample.leftMotorTacho = 360 + round((45*robot.TurnRadius)/(robot.wheelDiameter)*2)
         sample.rightMotorTacho = 360 - round((45*robot.TurnRadius)/(robot.wheelDiameter)*2)
         sample.leftSensor = [12.3, 12.3, 12.3]
@@ -142,7 +146,7 @@ class RobotTestCase(unittest.TestCase):
         sample.timeStamp = 0        
         
         robot.motion(sample)
-        pose = Pose(20, 14, pose.theta + 45/180*math.pi)
+        pose = Pose(20, 14, (pose.theta + 45/180*math.pi)%(math.pi*2))
         assert pose.x == robot.pose.x and pose.y == robot.pose.y and round(pose.theta, 2) == round(robot.pose.theta, 2)
         
         sample.leftMotorTacho = 720  +720 - round((180*robot.TurnRadius)/(robot.wheelDiameter)*2)
@@ -154,9 +158,11 @@ class RobotTestCase(unittest.TestCase):
         robot.motion(sample)
         assert pose.x == robot.pose.x and pose.y == robot.pose.y and round(pose.theta, 2) == round(robot.pose.theta, 2)
         
+        helpTheta = []
         robot.updateMap(sample, helpMapCallBack)
         testList = [(40, round(14/3*2)), (40, round(14/3)), (40, 0), (20, -7)]
         assert testList == helpList
-        
+        assert round(helpTheta[0], 1) == round((270)*math.pi/180, 1)
+         
 if __name__ == '__main__':
     unittest.main()

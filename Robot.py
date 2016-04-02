@@ -22,10 +22,11 @@ class Robot():
         
         #Robot parameters
         self.sensorWheelAngle = 90*math.pi/180
-        self.Width = 15.4  #two wheel distnce
+        self.Width = 14.35  #two wheel distnce
         self.TurnRadius = self.Width/2
-        self.SensorRadius = 7.0 #Front Sensor to middle point of two wheels
-        self.wheelDiameter = 4.32
+        self.SensorRadius = 8.0 #Front Sensor to middle point of two wheels
+        self.wheelDiameter = 4.32        
+        self.SensorLength = 3.0
         
     def getRobotShape(self, pose):
         """
@@ -41,14 +42,32 @@ class Robot():
         From sample to calcluate robot motion
         """
         self.pose = self.__calculateSamples(sample)
-        self.poseList.append(self.pose)
+        self.poseList.append(Pose(self.pose.x, self.pose.y, self.pose.theta))
         self.lastLeftTacho = sample.leftMotorTacho
         self.lastRightTacho = sample.rightMotorTacho
+        
+    def updateCorner(self, samples, mapUpdateCallback):
+        """
+        calcluate x,y from corner sample
+        """
+        samples = samples.frontSensor
+        nx, ny = self.__getFrontSensorCoord(self.pose)
+        transAngle = (self.pose.theta - math.pi/2)%(math.pi*2)        
+        for sample in samples:        
+            # suppose x,y is the 0,0 of new coords, get the new x,y for sample in the new coords
+            sx =  round((sample[0] + self.SensorLength)*math.sin(sample[1]*math.pi/180))
+            sy =  round((sample[0] + self.SensorLength)*math.cos(sample[1]*math.pi/180))
+            # get the x,y for the sample point in origin coords
+            mx, my = self.__coordsTrans(sx, sy, transAngle)
+            # update map 
+            mapUpdateCallback(nx - mx ,ny + my, self.pose.theta)  
+        return 0
         
     def updateMap(self, sample, mapUpdateCallback):
         """
         Update map based on samples, this function must be called after motion
         """             
+       # print(self.poseList)
         if len(self.poseList) < 2:
             print(" motion function must be called before updateMap")
             return Robot.ERROR
@@ -57,13 +76,13 @@ class Robot():
              print("Do not update map after turn")
              return Robot.ERROR
              
-        leftSamples = sample.leftSensor  
+        leftSamples = sample.leftSensor     
         if self.__updateMapFromLeftSensor(leftSamples, mapUpdateCallback) != 0:
             print("Failed to update map based on left sensor samples")
             return Robot.ERROR
         
-        frontSamples = sample.frontSensor
-        self.__updateMapFromFrontSensor(frontSamples, mapUpdateCallback)
+        #frontSamples = sample.frontSensor
+        #self.__updateMapFromFrontSensor(frontSamples, mapUpdateCallback)
         return Robot.SUCCESS
 
     def __getDeltaTacho(self, sample):
@@ -79,7 +98,7 @@ class Robot():
         """
         deltaLeftTacho, deltaRightTacho  = self.__getDeltaTacho(sample)
         pose = Pose()
-        if deltaLeftTacho == deltaRightTacho:
+        if deltaRightTacho - 10 < deltaLeftTacho < deltaRightTacho + 10:
             # in this case, there is no turn, just move
             pose = self.__calcluateMove(deltaLeftTacho)
         else:
@@ -118,32 +137,28 @@ class Robot():
         pose = Pose()
         # the radian during this turn
         deltaTheta = self.__calcluateRadianFromMotorTacho(tacho)
-        self.pose.theta += deltaTheta
+        self.pose.theta -= deltaTheta
         pose.x = self.pose.x
         pose.y = self.pose.y        
-        pose.theta = self.pose.theta
+        pose.theta = self.pose.theta%(math.pi*2)
         
         return pose
         
     def __getFrontSensorCoord(self, pose):      
         sx = round(pose.x + self.SensorRadius*math.cos(pose.theta))
-        sy = round(pose.y + self.SensorRadius*math.sin(pose.theta))
+        sy = round(pose.y + self.SensorRadius*math.sin(pose.theta)) 
         return sx, sy
         
     def __getLeftWheelCooord(self, pose):
-        lx = round(pose.x + self.TurnRadius*math.cos(pose.theta + self.sensorWheelAngle))          
-        ly = round(pose.y + self.TurnRadius*math.sin(pose.theta + self.sensorWheelAngle))
+        lx = round(pose.x + self.TurnRadius*math.cos(pose.theta - self.sensorWheelAngle))          
+        ly = round(pose.y + self.TurnRadius*math.sin(pose.theta - self.sensorWheelAngle))
         return lx, ly
         
     def __getRightWheelCooord(self, pose):
-        rx = round(pose.x + self.TurnRadius*math.cos(pose.theta - self.sensorWheelAngle))          
-        ry = round(pose.y + self.TurnRadius*math.sin(pose.theta - self.sensorWheelAngle))
+        rx = round(pose.x + self.TurnRadius*math.cos(pose.theta + self.sensorWheelAngle))          
+        ry = round(pose.y + self.TurnRadius*math.sin(pose.theta + self.sensorWheelAngle))
         return rx, ry
         
-    def __updateMap(self):
-        self.__updateMapFromLeftSensor()
-        self.__updateMapFromFrontSensor()
-
     def __updateMapFromLeftSensor(self, leftSamples, mapUpdateCallback):
         """
         between two samples, there are measurements from left sensor, check the delta tacho count, if left is not equal
@@ -151,6 +166,8 @@ class Robot():
         if left equal right, because there is not tacho measurement for each left sensor measurement point, we just suppose
         the moved distance between two measure points is: moveDistance/len(leftSensorSamples)
         """
+        if len(leftSamples) < 1:
+            return 0
         poseNum = len(self.poseList)
         if poseNum < 2:
             print("There is only one pose, robot does not move so far")
@@ -161,17 +178,17 @@ class Robot():
         # get the init x,y for left Sensor, in this robot, it' same location as left wheel
         # the theta keeps same after move
         x, y = self.__getLeftWheelCooord(Pose(x, y, theta))
-        for index, sample in enumerate(leftSamples):
+        for index, sample in enumerate(leftSamples):         
             # get x,y for each left sensor
-            nx, ny = self.__getCoord(x, y, theta, moveDistance*(index + 1))           
+            nx, ny = self.__getCoord(x, y, theta, moveDistance*(index + 1))                 
             # suppose x,y is the 0,0 of new coords, get the new x,y for sample in the new coords
-            mx, my = 0, sample
+            sx, sy = 0, sample
             # Get the angle between new coords and old coords
             transAngle = (theta)%(2*math.pi)
             # get the x,y for the sample point in origin coords
-            mx, my = self.__coordsTrans(mx, my, transAngle)
+            mx, my = self.__coordsTrans(sx, sy, transAngle)
             # update map 
-            mapUpdateCallback(nx - mx,ny + my)  
+            mapUpdateCallback(nx + mx,ny - my, self.pose.theta)  
         return 0
         
     def __updateMapFromFrontSensor(self, frontSamples, mapUpdateCallback):
@@ -181,13 +198,13 @@ class Robot():
         x, y = self.__getFrontSensorCoord(self.pose)
         # suppose x,y is the 0,0 of new coords, get the new x,y for sample in the new coords
         # in current implementation, front sensor do not turn, so, frontSamples[1] always 0
-        mx, my = 0, frontSamples[0]
+        sx, sy = 0, frontSamples[0]
         # Get the angle between new coords and old coords
         transAngle = (self.pose.theta-math.pi/2)%(2*math.pi)
         # get the x,y for the sample point in origin coords
-        mx, my = self.__coordsTrans(mx, my, transAngle)
+        mx, my = self.__coordsTrans(sx, sy, transAngle)
         # update map 
-        mapUpdateCallback(x - mx,y + my)  
+        mapUpdateCallback(x - mx,y + my, self.pose.theta)  
         return 0        
         
     def __coordsTrans(self, mx, my, transAngle):
